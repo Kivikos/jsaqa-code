@@ -1,55 +1,51 @@
+const { Browser } = require("puppeteer");
 const { clickElement, putText, getText } = require("./lib/commands.js");
-const { generateName } = require("./lib/util.js");
 
 let page;
 
 beforeEach(async () => {
   page = await browser.newPage();
-  await page.setDefaultNavigationTimeout(0);
+  await page.goto("http://qamid.tmweb.ru/client/index.php");
 });
 
 afterEach(() => {
   page.close();
 });
 
-describe("Netology.ru tests", () => {
-  beforeEach(async () => {
-    page = await browser.newPage();
-    await page.goto("https://netology.ru");
+describe("Ticket buying tests", () => {
+  test("Should buy available ticket", async () => {
+    await clickElement(page, "body > nav > a:nth-child(5)");
+    await clickElement(page, "div:nth-child(2) > ul > li > a");
+    await clickElement(page, "div:nth-child(1) > span:nth-child(1)");
+    await clickElement(page, "body > main > section > button");
+    await page.waitForSelector("body > main > section > header > h2");
+    await clickElement(page, "body > main > section > div > button");
+    const actual = await getText(page, "body > main > section > header > h2");
+    expect(actual).toContain("Электронный билет");
   });
 
-  test("The first test'", async () => {
-    const title = await page.title();
-    console.log("Page title: " + title);
-    await clickElement(page, "header a + a");
-    const title2 = await page.title();
-    console.log("Page title: " + title2);
-    const pageList = await browser.newPage();
-    await pageList.goto("https://netology.ru/navigation");
-    await pageList.waitForSelector("h1");
+  test("Tickets should be booked", async () => {
+    await clickElement(page, "body > nav > a:nth-child(5)");
+    await clickElement(page, "div:nth-child(2) > ul > li > a");
+    await clickElement(page, "div:nth-child(1) > span:nth-child(10)");
+    await clickElement(page, "div:nth-child(1) > span:nth-child(9)");
+    await clickElement(page, "body > main > section > button");
+    await page.waitForSelector("body > main > section > header > h2");
+    await clickElement(page, "body > main > section > div > button");
+    const actual = await getText(page, "body > main > section > header > h2");
+    expect(actual).toContain("Электронный билет");
   });
 
-  test("The first link text 'Медиа Нетологии'", async () => {
-    const actual = await getText(page, "header a + a");
-    expect(actual).toContain("Медиа Нетологии");
+  test("Should try to buy unavailable ticket", async () => {
+    await clickElement(page, "body > nav > a:nth-child(5)");
+    await clickElement(page, "div:nth-child(2) > ul > li > a");
+    await clickElement(page, "div:nth-child(1) > span:nth-child(1)");
+    expect(
+      String(
+        await page.$eval("button", (button) => {
+          return button.disabled;
+        })
+      )
+    ).toContain("true");
   });
-
-  test("The first link leads on 'Медиа' page", async () => {
-    await clickElement(page, "header a + a");
-    const actual = await getText(page, ".logo__media");
-    await expect(actual).toContain("Медиа");
-  });
-});
-
-test("Should look for a course", async () => {
-  await page.goto("https://netology.ru/navigation");
-  await putText(page, "input", "тестировщик");
-  const actual = await page.$eval("a[data-name]", (link) => link.textContent);
-  const expected = "Тестировщик ПО";
-  expect(actual).toContain(expected);
-});
-
-test("Should show warning if login is not email", async () => {
-  await page.goto("https://netology.ru/?modal=sign_in");
-  await putText(page, 'input[type="email"]', generateName(5));
 });
